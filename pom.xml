@@ -46,6 +46,19 @@
 			<artifactId>hadoop-core</artifactId>
 			<version>1.2.1</version>
 		</dependency>
+
+		<dependency>
+		    <groupId>edu.stanford.nlp</groupId>
+		    <artifactId>stanford-corenlp</artifactId>
+		    <version>3.4</version>
+		</dependency>
+		<dependency>
+		    <groupId>edu.stanford.nlp</groupId>
+		    <artifactId>stanford-corenlp</artifactId>
+		    <version>3.4</version>
+		    <classifier>models</classifier>
+		</dependency>
+
 		<dependency>
 			<groupId>org.tartarus.stemmer</groupId>
 			<artifactId>stemmer</artifactId>
@@ -86,7 +99,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>org.petuum.lda.training.CluewebParser</mainClass>
+							<mainClass>org.petuum.lda.training.CluewebTraining</mainClass>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>
 					</archive>
@@ -124,7 +137,7 @@
 					<!-- MainClass in mainfest make a executable jar -->
 					<archive>
 						<manifest>
-							<mainClass>org.petuum.lda.training.CluewebParser</mainClass>
+							<mainClass>org.petuum.lda.training.CluewebTraining</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

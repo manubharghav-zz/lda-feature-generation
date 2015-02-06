@@ -23,45 +23,50 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 
 
-public class CluewebParser extends Configured {
-	private static Logger logger = Logger.getLogger(CluewebParser.class);
+public class FeatureFileGenerator extends Configured {
+	private static Logger logger = Logger.getLogger(FeatureFileGenerator.class);
 	private FileSystem fs;
-	public CluewebParser(Configuration conf){
+	public FeatureFileGenerator(Configuration conf){
 		super(conf);
 	}
 	public static void main(String[] args) throws IOException {
 		String input = args[0];
 		String output=args[1];
+		String vocabFile = args[2];
+		int vocabSize = Integer.parseInt(args[3]);
 		Path inputPath = new Path(input);
 		Path outputPath = new Path(output);
 		Configuration conf = new Configuration();
-		CluewebParser job = new CluewebParser(conf);
-		job.parseData(inputPath, outputPath);
+		FeatureFileGenerator job = new FeatureFileGenerator(conf);
+		job.generateFeatures(inputPath, outputPath, vocabFile, vocabSize);
 	}
 	
-	public void parseData(Path input, Path outputPath) throws IOException {
+	public void generateFeatures(Path input, Path outputPath, String vocabFile, int vocabSize) throws IOException {
 		logger.info("Parsing Data from " + input.toString());
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		long start = System.currentTimeMillis();
 		JobConf job = new JobConf();
-		job.setJobName("Clue Web Parse Job");
+		job.setJobName("Feature File Generation Job");
+//		Path output = new Path(outputPath, "output");
 		fs = FileSystem.get(job);
 		fs.delete(outputPath, true);
-		job.setJarByClass(CluewebParser.class);
+		job.setJarByClass(FeatureFileGenerator.class);
 //		String classpath = System.getProperty("java.class.path");
 //		String[] classpathEntries = classpath.split(File.pathSeparator);
 //		for(String s: classpathEntries){
 //			System.out.println(s);
 //		}
+		job.set("VocabFile", vocabFile);
+		job.setInt("VocabSize", vocabSize);
 		
 		job.setInputFormat(WarcFileInputFormat.class);
 		WarcFileInputFormat.addInputPath(job, input);
 		
-		job.setMapperClass(ClueWebMapper.class);
-		job.setReducerClass(CluewebReducer.class);
+		job.setMapperClass(FeatureMapper.class);
+		job.setReducerClass(FeatureReducer.class);
 
 	    job.setMapOutputKeyClass(Text.class);
-	    job.setMapOutputValueClass(IntWritable.class);
+	    job.setMapOutputValueClass(Text.class);
 	   	    
 		FileOutputFormat.setOutputPath(job, outputPath);
 //		job.setOutputFormat(TextOutputFormat.class);

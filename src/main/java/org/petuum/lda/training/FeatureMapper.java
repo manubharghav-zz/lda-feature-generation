@@ -1,12 +1,19 @@
 package org.petuum.lda.training;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -21,8 +28,8 @@ import org.tartarus.snowball.ext.englishStemmer;
 import edu.stanford.nlp.process.Morphology;
 
 
-public class ClueWebMapper extends Configured implements
-Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
+public class FeatureMapper extends Configured implements
+Mapper<Writable, WritableWarcRecord, Text, Text> {
 	private IntWritable val = new IntWritable(1);
 	private static StopWordFilter filter;
 	private Text outputKey = new Text();
@@ -30,10 +37,11 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 	private Text stopword = new Text("STOPWORD");
 	private Text newline = new Text("NEWLINE");
 	public static final Log logger = LogFactory.getLog(WarcFileRecordReader.class);
+	private Map<String, Integer> featureIdMap = new HashMap<String, Integer>();
 	englishStemmer stemmer = new englishStemmer();
 	
 	private Morphology morphAnalyzer;
-	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, IntWritable> output,
+	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, Text> output,
 			Reporter arg3) throws IOException {
 		WarcHTMLResponseRecord htmlRecord=new WarcHTMLResponseRecord(value.getRecord());
 		String stemmedWord;
@@ -50,8 +58,6 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 						continue;
 					}
 					stemmedWord = morphAnalyzer.stem(splits[i]);										
-//					outputValue.set(trecId +" " + splits[i] + " "+i);
-//					outputKey.set(stemmedWord);
 					Integer count = map.get(stemmedWord);
 					if(count==null){
 						map.put(stemmedWord, 1);
@@ -59,13 +65,9 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 					else{
 						map.put(stemmedWord,count+1);
 					}
-					if(map.size()>1000){
-						publishMap(map, output);
-					}
 				}
 			}
-			
-			publishMap(map, output);
+			publishMap(map, output,trecId);
 		}
 		catch(Exception e){
 			System.out.println("exception occured while processing key:" + key.toString());
@@ -73,17 +75,73 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 		
 	}
 	
-	void publishMap(HashMap<String, Integer> map,OutputCollector<Text, IntWritable> output) throws IOException{
-		IntWritable mapValue = new IntWritable(0);
-		Text key = new Text();
+	void publishMap(HashMap<String, Integer> map,OutputCollector<Text, Text> output, String trecId) throws IOException{
+		StringBuffer buffer = new StringBuffer();
 		for(String key1:map.keySet()){
-			key.set(key1);
-			mapValue.set(map.get(key1));
-			output.collect(key,mapValue);
+			Integer featureId =  featureIdMap.get(key1);
+			if(featureId!=null){
+				buffer.append(featureIdMap.get(key1)).append(":").append(map.get(key1)).append("\t");
+			}
+			else{
+				logger.info("No mappring found for "+key1);
+			}
 		}
+		System.out.println(trecId + " " + buffer.toString());
+		output.collect(new Text(trecId),new Text(buffer.toString()));
 		map.clear();
 	}
 	public void configure(JobConf job) {
+		int vocabSize = job.getInt("VocabSize", 1000000);
+		String vocabPath =job.get("VocabFile");
+		System.out.println(vocabPath);
+		BufferedReader br=null;
+		try {
+			int count = 0;
+			Path pt = new Path(vocabPath);
+			FileSystem fs = FileSystem.get(job);
+			FileStatus[] status = fs.listStatus(pt);
+			TreeSet<String> set = new TreeSet<String>();
+			for (FileStatus s : status) {
+				Path fullPath = s.getPath();
+				if (fullPath.getName().startsWith("part")) {
+					set.add(fullPath.toString());
+				}
+			}
+
+			for (String s : set) {
+				logger.info("reading from path:" + s);
+
+				br = new BufferedReader(new InputStreamReader(fs.open(new Path(s))));
+
+				String line;
+				line = br.readLine();
+				while (line != null && count < vocabSize) {
+					// System.out.println(line);
+					String[] splits = line.split("\\t");
+					featureIdMap.put(splits[0], count);
+					// be sure to read the next line otherwise you'll get an
+					// infinite loop
+					count++;
+					line = br.readLine();
+				}
+
+				br.close();
+				//
+			}
+			// System.out.println("Loaded "+count +" items into memory");
+		}
+		catch(Exception e){
+			System.out.println("Error loading vocab file from disk. ERROR" + e);
+		}
+		finally {
+			// you should close out the BufferedReader
+			try {
+				br.close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+
+			}
+		}
 		
 		filter= new StopWordFilter();
 		morphAnalyzer = new Morphology();

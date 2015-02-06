@@ -13,11 +13,10 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.log4j.Logger;
 
 
-public class CluewebReducer implements Reducer<Text, IntWritable, Text, Text> {
+public class FeatureReducer implements Reducer<Text, Text, Text, Text> {
 	
-	private static Logger logger = Logger.getLogger(CluewebReducer.class);
+	private static Logger logger = Logger.getLogger(FeatureReducer.class);
 	private static Text value = new Text();
-	private MultipleOutputs mos;
 	public void configure(JobConf conf) {
 		System.out.println("Started Reduce");
 //		 mos = new MultipleOutputs(conf);		
@@ -27,24 +26,21 @@ public class CluewebReducer implements Reducer<Text, IntWritable, Text, Text> {
 //		mos.close();
 	}
 
-	public void reduce(Text key, Iterator<IntWritable> arg1,
+	public void reduce(Text key, Iterator<Text> arg1,
 			OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
-//		StringBuffer buffer = new StringBuffer();
-		int frequency=0;
+		StringBuffer buffer = new StringBuffer();
 		
 		while(arg1.hasNext()){
-			IntWritable w = arg1.next();
-			frequency=frequency+w.get();
-//			buffer.append(arg1.next().toString());
-//			buffer.append(" ");
+			buffer.append(arg1.next().toString());
+			buffer.append("\t");
 		}
-		String newKey = frequency + " " + key.toString();
+		String newKey = key.toString();
 //		System.out.println(frequency);
-		output.collect(key, new Text(String.valueOf(frequency)));
+		
 		key.set(newKey);
 //		value.set(buffer.toString());
 //		mos.getCollector("index", reporter).collect(key, value);
-		
+		output.collect(key, new Text(buffer.toString()));
 		
 	}
 	
