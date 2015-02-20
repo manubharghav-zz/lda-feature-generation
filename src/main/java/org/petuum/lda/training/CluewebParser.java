@@ -1,14 +1,14 @@
 package org.petuum.lda.training;
 
 
-import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import org.apache.log4j.*;
-
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -16,10 +16,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.hadoop.mapred.TextOutputFormat;
-import org.apache.hadoop.mapred.lib.MultipleOutputs;
+import org.apache.log4j.Logger;
 
 
 
@@ -39,6 +36,8 @@ public class CluewebParser extends Configured {
 		job.parseData(inputPath, outputPath);
 	}
 	
+	
+	
 	public void parseData(Path input, Path outputPath) throws IOException {
 		logger.info("Parsing Data from " + input.toString());
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -55,14 +54,33 @@ public class CluewebParser extends Configured {
 //		}
 		
 		job.setInputFormat(WarcFileInputFormat.class);
-		WarcFileInputFormat.addInputPath(job, input);
+//		WarcFileInputFormat.addInputPath(job, input);
 		
 		job.setMapperClass(ClueWebMapper.class);
 		job.setReducerClass(CluewebReducer.class);
+		job.setCombinerClass(CluewebCombiner.class);
 
 	    job.setMapOutputKeyClass(Text.class);
 	    job.setMapOutputValueClass(IntWritable.class);
-	   	    
+	    
+	    // adding inputs.
+	    List<Path> inputhPaths = new ArrayList<Path>();
+        FileSystem fs = FileSystem.get(job);
+//        FileStatus[] listStatus = fs.listStatus(input);
+        FileStatus[] listStatus = fs.globStatus(new Path(input + "*/*/*/*/*/*.warc.gz"));
+        for (FileStatus fstat : listStatus) {
+        	if(fstat.getPath().getName().endsWith(".warc.gz")){
+        		logger.info("Accepting Path: " + fstat.getPath().toString());
+            	inputhPaths.add(fstat.getPath());
+        	}
+        	else{
+        		logger.info("rejecting path: " + fstat.getPath().getName());
+        	}
+        }
+
+        WarcFileInputFormat.setInputPaths(job,
+                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
+	    
 		FileOutputFormat.setOutputPath(job, outputPath);
 //		job.setOutputFormat(TextOutputFormat.class);
 		job.setOutputKeyClass(Text.class);
@@ -77,6 +95,7 @@ public class CluewebParser extends Configured {
 		job.setBoolean("mapred.skip.mode.enabled", true);
 		job.setInt("mapred.skip.reduce.max.skip.records", 1);
 		job.setInt("mapred.skip.attempts.to.start.skipping",1);	
+		job.setInt("mapreduce.reduce.input.limit", -1);
 		
 		JobClient.runJob(job);
 		

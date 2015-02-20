@@ -4,11 +4,15 @@ package org.petuum.lda.training;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.*;
 
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -60,7 +64,22 @@ public class FeatureFileGenerator extends Configured {
 		job.setInt("VocabSize", vocabSize);
 		
 		job.setInputFormat(WarcFileInputFormat.class);
-		WarcFileInputFormat.addInputPath(job, input);
+		// adding inputs.
+	    List<Path> inputhPaths = new ArrayList<Path>();
+        FileSystem fs = FileSystem.get(job);
+        FileStatus[] listStatus = fs.globStatus(new Path(input + "*/*/*/*/*/*.warc.gz"));
+        for (FileStatus fstat : listStatus) {
+        	if(fstat.getPath().getName().endsWith(".warc.gz")){
+        		logger.info("Accepting Path: " + fstat.getPath().toString());
+            	inputhPaths.add(fstat.getPath());
+        	}
+        	else{
+        		logger.info("rejecting path: " + fstat.getPath().getName());
+        	}
+        }
+
+        WarcFileInputFormat.setInputPaths(job,
+                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
 		
 		job.setMapperClass(FeatureMapper.class);
 		job.setReducerClass(FeatureReducer.class);
@@ -82,7 +101,7 @@ public class FeatureFileGenerator extends Configured {
 		job.setBoolean("mapred.skip.mode.enabled", true);
 		job.setInt("mapred.skip.reduce.max.skip.records", 1);
 		job.setInt("mapred.skip.attempts.to.start.skipping",1);	
-		
+		job.setInt("mapreduce.reduce.input.limit", -1);
 		JobClient.runJob(job);
 		
 	}

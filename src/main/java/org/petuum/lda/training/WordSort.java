@@ -48,6 +48,7 @@ public class WordSort {
 		job.setOutputKeyComparatorClass(IntComparator.class);
 		FileInputFormat.addInputPath(job,input);
 		FileOutputFormat.setOutputPath(job, output);
+		job.setInt("mapreduce.reduce.input.limit", -1);
 		fs = FileSystem.get(job);
 		fs.delete(output, true);
 		JobClient.runJob(job);
