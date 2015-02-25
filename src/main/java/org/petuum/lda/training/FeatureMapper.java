@@ -23,7 +23,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.*;
 import org.jsoup.Jsoup;
-import org.tartarus.snowball.ext.englishStemmer;
 
 import edu.stanford.nlp.process.Morphology;
 
@@ -36,9 +35,8 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 	private Text outputValue = new Text();
 	private Text stopword = new Text("STOPWORD");
 	private Text newline = new Text("NEWLINE");
-	public static final Log logger = LogFactory.getLog(WarcFileRecordReader.class);
+	public static final Log logger = LogFactory.getLog(FeatureMapper.class);
 	private Map<String, Integer> featureIdMap = new HashMap<String, Integer>();
-	englishStemmer stemmer = new englishStemmer();
 	
 	private Morphology morphAnalyzer;
 	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, Text> output,

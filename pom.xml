@@ -7,7 +7,7 @@
 	<name>lda</name>
 	<url>http://maven.apache.org</url>
 	<properties>
-		<jdk.version>1.6</jdk.version>
+		<jdk.version>1.7</jdk.version>
 		<jodatime.version>2.5</jodatime.version>
 		<junit.version>4.11</junit.version>
 		<log4j.version>2.1</log4j.version>
@@ -57,12 +57,6 @@
 		    <artifactId>stanford-corenlp</artifactId>
 		    <version>3.4</version>
 		    <classifier>models</classifier>
-		</dependency>
-
-		<dependency>
-			<groupId>org.tartarus.stemmer</groupId>
-			<artifactId>stemmer</artifactId>
-			<version>0.1</version>
 		</dependency>
 	</dependencies>
 	<build>

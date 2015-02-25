@@ -67,7 +67,7 @@ public class FeatureFileGenerator extends Configured {
 		// adding inputs.
 	    List<Path> inputhPaths = new ArrayList<Path>();
         FileSystem fs = FileSystem.get(job);
-        FileStatus[] listStatus = fs.globStatus(new Path(input + "*/*/*/*/*/*.warc.gz"));
+        FileStatus[] listStatus = fs.globStatus(input);
         for (FileStatus fstat : listStatus) {
         	if(fstat.getPath().getName().endsWith(".warc.gz")){
         		logger.info("Accepting Path: " + fstat.getPath().toString());

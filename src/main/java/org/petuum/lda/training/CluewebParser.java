@@ -64,11 +64,17 @@ public class CluewebParser extends Configured {
 	    job.setMapOutputValueClass(IntWritable.class);
 	    
 	    // adding inputs.
+      Path actual_inputs = new Path(input, "/*/*.warc.gz");
+      System.out.println(actual_inputs.toString());
+      System.out.println(input.toString());
 	    List<Path> inputhPaths = new ArrayList<Path>();
         FileSystem fs = FileSystem.get(job);
-//        FileStatus[] listStatus = fs.listStatus(input);
-        FileStatus[] listStatus = fs.globStatus(new Path(input + "*/*/*/*/*/*.warc.gz"));
+        FileStatus[] listStatus = fs.globStatus(input);
+        System.out.println(fs.getUri());
+        System.out.println(fs.getName());
+        System.out.println(listStatus.length);
         for (FileStatus fstat : listStatus) {
+        System.out.println(fstat.getPath());
         	if(fstat.getPath().getName().endsWith(".warc.gz")){
         		logger.info("Accepting Path: " + fstat.getPath().toString());
             	inputhPaths.add(fstat.getPath());

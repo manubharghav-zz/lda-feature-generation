@@ -16,7 +16,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.*;
 import org.jsoup.Jsoup;
-import org.tartarus.snowball.ext.englishStemmer;
 
 import edu.stanford.nlp.process.Morphology;
 
@@ -29,8 +28,7 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 	private Text outputValue = new Text();
 	private Text stopword = new Text("STOPWORD");
 	private Text newline = new Text("NEWLINE");
-	public static final Log logger = LogFactory.getLog(WarcFileRecordReader.class);
-	englishStemmer stemmer = new englishStemmer();
+	public static final Log logger = LogFactory.getLog(ClueWebMapper.class);
 	
 	private Morphology morphAnalyzer;
 	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, IntWritable> output,
