@@ -46,7 +46,7 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 			String[] splits = parseContent.split(" ");
 			splits = StringUtils.stripAll(splits, "&-:\\?><\\\" '#@*(),%. \\/");
 			for(int i=0;i<splits.length;i++){
-				if(!filter.isStopWord(splits[i])){
+				if(!filter.isStopWord(splits[i].toLowerCase())){
 					if(splits[i].length()<2 || !StringUtils.isAlpha(splits[i]) ){
 						continue;
 					}
