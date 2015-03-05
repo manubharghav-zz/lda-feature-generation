@@ -18,12 +18,10 @@ public class FeatureReducer implements Reducer<Text, Text, Text, Text> {
 	private static Logger logger = Logger.getLogger(FeatureReducer.class);
 	private static Text value = new Text();
 	public void configure(JobConf conf) {
-		System.out.println("Started Reduce");
-//		 mos = new MultipleOutputs(conf);		
+		System.out.println("Started Reduce");	
 	}
 
 	public void close() throws IOException {
-//		mos.close();
 	}
 
 	public void reduce(Text key, Iterator<Text> arg1,
@@ -35,11 +33,8 @@ public class FeatureReducer implements Reducer<Text, Text, Text, Text> {
 			buffer.append("\t");
 		}
 		String newKey = key.toString();
-//		System.out.println(frequency);
 		
 		key.set(newKey);
-//		value.set(buffer.toString());
-//		mos.getCollector("index", reporter).collect(key, value);
 		output.collect(key, new Text(buffer.toString()));
 		
 	}

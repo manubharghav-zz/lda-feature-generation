@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
         
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -28,7 +30,7 @@ public class WordSort {
 		}
 	}
 	
-	public void run(Path input, Path output) throws IOException{
+	public void run(Path input, Path output, Path mergedOutput) throws IOException{
 		Configuration conf = new Configuration();
 		JobConf job = new JobConf();
 		job.setJobName("Vocabulary Sort");
@@ -51,12 +53,15 @@ public class WordSort {
 		job.setInt("mapreduce.reduce.input.limit", -1);
 		fs = FileSystem.get(job);
 		fs.delete(output, true);
+		fs.delete(mergedOutput, true);
 		JobClient.runJob(job);
+		FileUtil.copyMerge(fs, output, fs, mergedOutput, true, job, null);
+		
 	}
 
 	public static void main(String[] args) throws Exception {
 		WordSort ws = new WordSort();
-		ws.run(new Path(args[0]), new Path(args[1]));
+		ws.run(new Path(args[0]), new Path(args[1]), new Path(args[2]));
 	}
 
 }

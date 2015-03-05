@@ -16,12 +16,15 @@ public class CluewebTraining {
 		parser.parseData(input, vocabPath);
 		
 		Path sortedVocabPath = new Path(output, "sorted_vocab");
+		Path mergedVocabPath = new Path(output, "merged_sorted_vocab");
+		
 		WordSort vocabSorter = new WordSort();
-		vocabSorter.run(vocabPath, sortedVocabPath);
+		vocabSorter.run(vocabPath, sortedVocabPath, mergedVocabPath);
+		
 		
 		Path FeatureFilesLocation = new Path(output, "featurefiles");
 		FeatureFileGenerator gen  = new FeatureFileGenerator(new Configuration());
-		gen.generateFeatures(input, FeatureFilesLocation, sortedVocabPath.toString(),vocabsize);
+		gen.generateFeatures(input, FeatureFilesLocation, mergedVocabPath.toString(),vocabsize);
 		System.out.println("Completed Generatignf feature files");
 	}
 }

@@ -14,6 +14,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -45,21 +46,22 @@ public class FeatureFileGenerator extends Configured {
 		job.generateFeatures(inputPath, outputPath, vocabFile, vocabSize);
 	}
 	
-	public void generateFeatures(Path input, Path outputPath, String vocabFile, int vocabSize) throws IOException {
+	public void generateFeatures(Path input, Path output, String vocabFile, int vocabSize) throws IOException {
 		logger.info("Parsing Data from " + input.toString());
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		long start = System.currentTimeMillis();
 		JobConf job = new JobConf();
 		job.setJobName("Feature File Generation Job");
-//		Path output = new Path(outputPath, "output");
 		fs = FileSystem.get(job);
-		fs.delete(outputPath, true);
+		
+		
+		Path FeatureFilesLocation = new Path(output, "featurefiles");
+		fs.delete(FeatureFilesLocation, true);
+		
+		Path MergedFeatureFilesLocation = new Path(output, "mergedFeatureFiles");
+		
 		job.setJarByClass(FeatureFileGenerator.class);
-//		String classpath = System.getProperty("java.class.path");
-//		String[] classpathEntries = classpath.split(File.pathSeparator);
-//		for(String s: classpathEntries){
-//			System.out.println(s);
-//		}
+
 		job.set("VocabFile", vocabFile);
 		job.setInt("VocabSize", vocabSize);
 		
@@ -87,7 +89,7 @@ public class FeatureFileGenerator extends Configured {
 	    job.setMapOutputKeyClass(Text.class);
 	    job.setMapOutputValueClass(Text.class);
 	   	    
-		FileOutputFormat.setOutputPath(job, outputPath);
+		FileOutputFormat.setOutputPath(job, FeatureFilesLocation);
 //		job.setOutputFormat(TextOutputFormat.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
@@ -103,6 +105,6 @@ public class FeatureFileGenerator extends Configured {
 		job.setInt("mapred.skip.attempts.to.start.skipping",1);	
 		job.setInt("mapreduce.reduce.input.limit", -1);
 		JobClient.runJob(job);
-		
+		FileUtil.copyMerge(fs, FeatureFilesLocation, fs, MergedFeatureFilesLocation, true, job, null);
 	}
 }

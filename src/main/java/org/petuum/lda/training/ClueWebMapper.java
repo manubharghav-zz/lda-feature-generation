@@ -22,20 +22,16 @@ import edu.stanford.nlp.process.Morphology;
 
 public class ClueWebMapper extends Configured implements
 Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
-	private IntWritable val = new IntWritable(1);
+	private IntWritable one = new IntWritable(1);
+	private Text text = new Text();
 	private static StopWordFilter filter;
-	private Text outputKey = new Text();
-	private Text outputValue = new Text();
-	private Text stopword = new Text("STOPWORD");
-	private Text newline = new Text("NEWLINE");
 	public static final Log logger = LogFactory.getLog(ClueWebMapper.class);
 	
 	private Morphology morphAnalyzer;
 	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, IntWritable> output,
 			Reporter arg3) throws IOException {
 		WarcHTMLResponseRecord htmlRecord=new WarcHTMLResponseRecord(value.getRecord());
-		String stemmedWord;
-		HashMap<String, Integer> map  = new HashMap<String, Integer>();
+		String stemmedWord=null;
 		try {
 			String trecId = htmlRecord.getTargetTrecID();
 			logger.info("Map: Processing trecID: "+trecId + "  url:" +htmlRecord.getTargetURI());
@@ -47,39 +43,16 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 					if(splits[i].length()<2 || !StringUtils.isAlpha(splits[i]) ){
 						continue;
 					}
-					stemmedWord = morphAnalyzer.stem(splits[i]);										
-//					outputValue.set(trecId +" " + splits[i] + " "+i);
-//					outputKey.set(stemmedWord);
-					Integer count = map.get(stemmedWord);
-					if(count==null){
-						map.put(stemmedWord, 1);
-					}
-					else{
-						map.put(stemmedWord,count+1);
-					}
-					if(map.size()>1000){
-						publishMap(map, output);
-					}
+					stemmedWord = morphAnalyzer.stem(splits[i]);
+					text.set(stemmedWord);
+					output.collect(text, one);
 				}
 			}
-			
-			publishMap(map, output);
 		}
 		catch(Exception e){
 			System.out.println("exception occured while processing key:" + key.toString());
 		}
 		
-	}
-	
-	void publishMap(HashMap<String, Integer> map,OutputCollector<Text, IntWritable> output) throws IOException{
-		IntWritable mapValue = new IntWritable(0);
-		Text key = new Text();
-		for(String key1:map.keySet()){
-			key.set(key1);
-			mapValue.set(map.get(key1));
-			output.collect(key,mapValue);
-		}
-		map.clear();
 	}
 	public void configure(JobConf job) {
 		
@@ -87,9 +60,7 @@ Mapper<Writable, WritableWarcRecord, Text, IntWritable> {
 		morphAnalyzer = new Morphology();
 		
 	}
-	public void close() throws IOException {
-		// TODO Auto-generated method stub
-		
+	public void close() throws IOException {		
 	}
 
 }

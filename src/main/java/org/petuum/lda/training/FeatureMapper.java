@@ -29,12 +29,7 @@ import edu.stanford.nlp.process.Morphology;
 
 public class FeatureMapper extends Configured implements
 Mapper<Writable, WritableWarcRecord, Text, Text> {
-	private IntWritable val = new IntWritable(1);
 	private static StopWordFilter filter;
-	private Text outputKey = new Text();
-	private Text outputValue = new Text();
-	private Text stopword = new Text("STOPWORD");
-	private Text newline = new Text("NEWLINE");
 	public static final Log logger = LogFactory.getLog(FeatureMapper.class);
 	private Map<String, Integer> featureIdMap = new HashMap<String, Integer>();
 	
@@ -66,6 +61,7 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 				}
 			}
 			publishMap(map, output,trecId);
+			map.clear();
 		}
 		catch(Exception e){
 			System.out.println("exception occured while processing key:" + key.toString());
@@ -84,9 +80,9 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 				logger.info("No mappring found for "+key1);
 			}
 		}
-		System.out.println(trecId + " " + buffer.toString());
+		
 		output.collect(new Text(trecId),new Text(buffer.toString()));
-		map.clear();
+		
 	}
 	public void configure(JobConf job) {
 		int vocabSize = job.getInt("VocabSize", 1000000);
@@ -94,39 +90,22 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 		System.out.println(vocabPath);
 		BufferedReader br=null;
 		try {
-			int count = 0;
-			Path pt = new Path(vocabPath);
+			int count = 1;
 			FileSystem fs = FileSystem.get(job);
-			FileStatus[] status = fs.listStatus(pt);
-			TreeSet<String> set = new TreeSet<String>();
-			for (FileStatus s : status) {
-				Path fullPath = s.getPath();
-				if (fullPath.getName().startsWith("part")) {
-					set.add(fullPath.toString());
-				}
+
+			logger.info("reading from path:" + vocabPath);
+
+			br = new BufferedReader(new InputStreamReader(fs.open(new Path(
+					vocabPath))));
+
+			String line;
+			while((line=br.readLine())!=null && count <= vocabSize){
+				String[] splits = line.split("\\t");
+				featureIdMap.put(splits[0],count);
+				count++;
 			}
-
-			for (String s : set) {
-				logger.info("reading from path:" + s);
-
-				br = new BufferedReader(new InputStreamReader(fs.open(new Path(s))));
-
-				String line;
-				line = br.readLine();
-				while (line != null && count < vocabSize) {
-					// System.out.println(line);
-					String[] splits = line.split("\\t");
-					featureIdMap.put(splits[0], count);
-					// be sure to read the next line otherwise you'll get an
-					// infinite loop
-					count++;
-					line = br.readLine();
-				}
-
-				br.close();
-				//
-			}
-			// System.out.println("Loaded "+count +" items into memory");
+			line = br.readLine();
+			logger.info("loaded the vocab. Size of the vocab: " + count);
 		}
 		catch(Exception e){
 			System.out.println("Error loading vocab file from disk. ERROR" + e);
@@ -136,7 +115,6 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 			try {
 				br.close();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 
 			}
 		}
@@ -146,7 +124,7 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 		
 	}
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
