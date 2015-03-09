@@ -93,7 +93,6 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>org.petuum.lda.training.CluewebTraining</mainClass>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>
 					</archive>
@@ -129,11 +128,11 @@
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
 					<!-- MainClass in mainfest make a executable jar -->
-					<archive>
+					<!--<archive>
 						<manifest>
 							<mainClass>org.petuum.lda.training.CluewebTraining</mainClass>
 						</manifest>
-					</archive>
+					</archive>-->
 				</configuration>
 				<executions>
 					<execution>
