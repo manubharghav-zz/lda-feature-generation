@@ -54,7 +54,7 @@ public class Preprocessor extends Configured {
 		
 		job.setMapperClass(PreProcessMapper.class);
 		job.setReducerClass(PreProcessReducer.class);
-	    
+	    job.setCombinerClass(PreProcessReducer.class);
 	    // adding inputs.
 	    List<Path> inputhPaths = new ArrayList<Path>();
         FileSystem fs = FileSystem.get(job);
@@ -76,17 +76,16 @@ public class Preprocessor extends Configured {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-		job.set("mapred.map.child.java.opts","-Xmx1024m -XX:MaxPermSize=256m");
-		job.set("mapred.reduce.child.java.opts","-Xmx1024m -XX:MaxPermSize=256m");
-		job.setBoolean("mapred.map.tasks.speculative.execution",false);
-		job.setBoolean("mapred.reduce.tasks.speculative.execution",false);
-		job.setFloat("mapred.reduce.slowstart.completed.maps", (float) 1.0);
-		job.setBoolean("mapred.skip.mode.enabled", true);
-		job.setInt("mapred.skip.reduce.max.skip.records", 1);
-		job.setInt("mapred.skip.attempts.to.start.skipping",1);	
+		job.set("mapreduce.map.child.java.opts","-Xmx1024m -XX:MaxPermSize=256m");
+		job.set("mapreduce.reduce.child.java.opts","-Xmx1024m -XX:MaxPermSize=256m");
+		job.setBoolean("mapreduce.map.tasks.speculative.execution",false);
+		job.setBoolean("mapreduce.reduce.tasks.speculative.execution",false);
+		job.setFloat("mapreduce.reduce.slowstart.completed.maps", (float) 1.0);
+		job.setBoolean("mapreduce.skip.mode.enabled", true);
+		job.setInt("mapreduce.skip.reduce.max.skip.records", 1);
+		job.setInt("mapreduce.skip.attempts.to.start.skipping",1);	
 		job.setInt("mapreduce.reduce.input.limit", -1);
-		
+		job.setInt("mapreduce.task.timeout", 1200000);
 		JobClient.runJob(job);
-		
 	}
 }
