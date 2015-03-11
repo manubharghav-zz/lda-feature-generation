@@ -1,8 +1,6 @@
 package org.petuum.lda.preprocessing;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,9 +47,9 @@ public class PreProcessMapper extends Configured implements
 			String trecId = htmlRecord.getTargetTrecID();
 			logger.info("Map: Processing trecID: " + trecId + "  url:"
 					+ htmlRecord.getTargetURI());
-//			if(htmlRecord.getTargetURI().contains("innovative-dsp")){
-//				return;
-//			}
+			if(htmlRecord.getTargetURI().contains("innovative-dsp")){
+				return;
+			}
 			class Task implements Callable<String> {
 				@Override
 				public String call() throws Exception {
