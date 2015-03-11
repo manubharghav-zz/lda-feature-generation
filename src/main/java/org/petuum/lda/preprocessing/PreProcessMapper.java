@@ -1,7 +1,15 @@
 package org.petuum.lda.preprocessing;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -22,28 +30,48 @@ import org.petuum.lda.training.WritableWarcRecord;
 
 import edu.stanford.nlp.process.Morphology;
 
-
 public class PreProcessMapper extends Configured implements
-Mapper<Writable, WritableWarcRecord, Text, Text> {
+		Mapper<Writable, WritableWarcRecord, Text, Text> {
 	private Text text = new Text();
 	private Text outWord = new Text();
 	private static StopWordFilter filter;
 	public static final Log logger = LogFactory.getLog(PreProcessMapper.class);
-	
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private Morphology morphAnalyzer;
-	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, Text> output,
-			Reporter arg3) throws IOException {
-		WarcHTMLResponseRecord htmlRecord=new WarcHTMLResponseRecord(value.getRecord());
-		String stemmedWord=null;
+
+	public void map(Writable key, WritableWarcRecord value,
+			OutputCollector<Text, Text> output, Reporter arg3)
+			throws IOException {
+		final WarcHTMLResponseRecord htmlRecord = new WarcHTMLResponseRecord(
+				value.getRecord());
+		String stemmedWord = null;
 		try {
 			String trecId = htmlRecord.getTargetTrecID();
-			logger.info("Map: Processing trecID: "+trecId + "  url:" +htmlRecord.getTargetURI());
-			String parseContent = Jsoup.parse(htmlRecord.getRawRecord().getContentUTF8()).text().toLowerCase();
+			logger.info("Map: Processing trecID: " + trecId + "  url:"
+					+ htmlRecord.getTargetURI());
+//			if(htmlRecord.getTargetURI().contains("innovative-dsp")){
+//				return;
+//			}
+			class Task implements Callable<String> {
+				@Override
+				public String call() throws Exception {
+					return Jsoup
+							.parse(htmlRecord.getRawRecord().getContentUTF8())
+							.text().toLowerCase();
+				}
+			}
+
+			Future<String> future = executor.submit(new Task());
+
+			String parseContent = future.get(60, TimeUnit.SECONDS);
+
+			logger.info("Parsed Url: " + htmlRecord.getTargetURI());
 			String[] splits = parseContent.split(" ");
 			splits = StringUtils.stripAll(splits, "&-:\\?><\\\" '#@*(),%. \\/");
-			for(int i=0;i<splits.length;i++){
-				if(!filter.isStopWord(splits[i].toLowerCase())){
-					if(splits[i].length()<2 || !StringUtils.isAlpha(splits[i]) ){
+			for (int i = 0; i < splits.length; i++) {
+				if (!filter.isStopWord(splits[i].toLowerCase())) {
+					if (splits[i].length() < 2
+							|| !StringUtils.isAlpha(splits[i])) {
 						continue;
 					}
 					stemmedWord = morphAnalyzer.stem(splits[i]);
@@ -52,19 +80,36 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 					output.collect(text, outWord);
 				}
 			}
+		}  catch (InterruptedException e) {
+			System.out.println("exception occured while processing key:"
+					+ key.toString());
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			System.out.println("exception occured while processing key:"
+					+ key.toString());
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			System.out.println("exception occured while processing key:"
+					+ key.toString());
+			System.out.println("Killing the executor and creatign a new one.");
+			executor.shutdownNow();
+			executor = Executors.newSingleThreadExecutor();
+		}catch (Exception e) {
+			System.out.println("exception occured while processing key:"
+					+ key.toString());
 		}
-		catch(Exception e){
-			System.out.println("exception occured while processing key:" + key.toString());
-		}
-		
+
 	}
+
 	public void configure(JobConf job) {
-		
-		filter= new StopWordFilter();
+
+		filter = new StopWordFilter();
 		morphAnalyzer = new Morphology();
-		
+
 	}
-	public void close() throws IOException {		
+
+	public void close() throws IOException {
+		executor.shutdown();
 	}
 
 }

@@ -83,6 +83,8 @@ public class Preprocessor extends Configured {
 		job.setFloat("mapreduce.reduce.slowstart.completed.maps", (float) 1.0);
 		job.setBoolean("mapreduce.skip.mode.enabled", true);
 		job.setInt("mapreduce.skip.reduce.max.skip.records", 1);
+		job.setInt("mapreduce.task.skip.start.attempts", 2);
+		job.setLong("mapreduce.map.skip.maxrecords", 1000);
 		job.setInt("mapreduce.skip.attempts.to.start.skipping",1);	
 		job.setInt("mapreduce.reduce.input.limit", -1);
 		job.setInt("mapreduce.task.timeout", 1200000);
