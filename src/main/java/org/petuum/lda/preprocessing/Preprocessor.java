@@ -54,7 +54,7 @@ public class Preprocessor extends Configured {
 		
 		job.setMapperClass(PreProcessMapper.class);
 		job.setReducerClass(PreProcessReducer.class);
-	    job.setCombinerClass(PreProcessReducer.class);
+//	    job.setCombinerClass(PreProcessReducer.class);
 	    // adding inputs.
 	    List<Path> inputhPaths = new ArrayList<Path>();
         FileSystem fs = FileSystem.get(job);
@@ -87,6 +87,7 @@ public class Preprocessor extends Configured {
 		job.setLong("mapreduce.map.skip.maxrecords", 1000);
 		job.setInt("mapreduce.skip.attempts.to.start.skipping",1);	
 		job.setInt("mapreduce.reduce.input.limit", -1);
+		job.setNumReduceTasks(4);
 		job.setInt("mapreduce.task.timeout", 1200000);
 		JobClient.runJob(job);
 	}
