@@ -1,6 +1,7 @@
 package org.petuum.lda.preprocessing;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +37,7 @@ public class PreProcessMapper extends Configured implements
 	public static final Log logger = LogFactory.getLog(PreProcessMapper.class);
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private Morphology morphAnalyzer;
+	private HashMap<String, Integer> counts = new HashMap<String, Integer>();
 
 	public void map(Writable key, WritableWarcRecord value,
 			OutputCollector<Text, Text> output, Reporter arg3)
@@ -73,11 +75,27 @@ public class PreProcessMapper extends Configured implements
 						continue;
 					}
 					stemmedWord = morphAnalyzer.stem(splits[i]);
-					text.set(trecId);
-					outWord.set(stemmedWord);
-					output.collect(text, outWord);
+					Integer count = counts.get(stemmedWord);
+					if(count == null){
+						counts.put(stemmedWord, 1);
+					}
+					else{
+						counts.put(stemmedWord, count+1);
+					}
+//					text.set(trecId);
+//					outWord.set(stemmedWord);
+//					output.collect(text, outWord);
 				}
 			}
+			text.set(trecId);
+			StringBuffer buffer = new StringBuffer();
+			for (String stemWord:counts.keySet()){
+				buffer.append(stemWord).append(" ").append(counts.get(stemWord)).append(" ");
+			}
+			
+			counts.clear();
+			
+			output.collect(text, new Text(buffer.toString()));
 		}  catch (InterruptedException e) {
 			System.out.println("exception occured while processing key:"
 					+ key.toString());
