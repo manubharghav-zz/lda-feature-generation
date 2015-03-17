@@ -22,9 +22,9 @@ public class CluewebTraining {
 		vocabSorter.run(vocabPath, sortedVocabPath, mergedVocabPath);
 		
 		
-		Path FeatureFilesLocation = new Path(output, "featurefiles");
-		FeatureFileGenerator gen  = new FeatureFileGenerator(new Configuration());
-		gen.generateFeatures(input, FeatureFilesLocation, mergedVocabPath.toString(),vocabsize);
-		System.out.println("Completed Generatignf feature files");
+//		Path FeatureFilesLocation = new Path(output, "featurefiles");
+//		FeatureFileGenerator gen  = new FeatureFileGenerator(new Configuration());
+//		gen.generateFeatures(input, FeatureFilesLocation, mergedVocabPath.toString(),vocabsize);
+//		System.out.println("Completed Generatignf feature files");
 	}
 }

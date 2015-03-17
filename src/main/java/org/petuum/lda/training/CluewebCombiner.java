@@ -27,14 +27,21 @@ public class CluewebCombiner implements Reducer<Text, IntWritable, Text, IntWrit
 	
 	public void reduce(Text key, Iterator<IntWritable> arg1,
 			OutputCollector<Text, IntWritable> output, Reporter reporter) throws IOException {
-		int frequency=0;
-		
+		int termFrequency=0;
+		int DocFrequency=0;
 		while(arg1.hasNext()){
 			IntWritable w = arg1.next();
-			frequency=frequency+w.get();
+			if(w.get()>0){
+				termFrequency+=w.get();
+			}
+			else{
+				DocFrequency+=w.get();
+			}
 		}
-		intwritableObject.set(frequency);
-		output.collect(key, intwritableObject);		
+		intwritableObject.set(termFrequency);
+		output.collect(key, intwritableObject);
+		intwritableObject.set(DocFrequency);
+		output.collect(key, intwritableObject);
 	}
 	
 }

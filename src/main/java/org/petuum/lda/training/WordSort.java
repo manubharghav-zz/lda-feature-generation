@@ -17,17 +17,18 @@ import org.apache.log4j.Logger;
 public class WordSort {
 	private FileSystem fs;
 	private static Logger logger = Logger.getLogger(WordSort.class);
-	public static class IntComparator extends WritableComparator {
-		public IntComparator() {
-			super(IntWritable.class);
-		}
+	public static class DescendingKeyComparator extends WritableComparator {
+	    protected DescendingKeyComparator() {
+	        super(DoubleWritable.class, true);
+	    }
 
-		public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-
-			Integer v1 = ByteBuffer.wrap(b1, s1, l1).getInt();
-			Integer v2 = ByteBuffer.wrap(b2, s2, l2).getInt();
-			return v1.compareTo(v2) * (-1);
-		}
+	    @SuppressWarnings("rawtypes")
+	    @Override
+	    public int compare(WritableComparable w1, WritableComparable w2) {
+	        DoubleWritable key1 = (DoubleWritable) w1;
+	        DoubleWritable key2 = (DoubleWritable) w2;          
+	        return -1 * key1.compareTo(key2);
+	    }
 	}
 	
 	public void run(Path input, Path output, Path mergedOutput) throws IOException{
@@ -40,16 +41,16 @@ public class WordSort {
 		logger.info("reading input from: " +input.toString());
 		logger.info("Writing sorted Output to : "+output.toString());
 		
-		job.setOutputValueClass(IntWritable.class);
-		job.setMapOutputKeyClass(IntWritable.class);
+		job.setOutputValueClass(DoubleWritable.class);
+		job.setMapOutputKeyClass(DoubleWritable.class);
 		job.setMapOutputValueClass(Text.class);
 		job.setMapperClass(WordSortMapper.class);
 		job.setReducerClass(WordSortReducer.class);
 		job.setInputFormat(TextInputFormat.class);
 		job.setOutputFormat(TextOutputFormat.class);
-		job.setOutputKeyComparatorClass(IntComparator.class);
-		FileInputFormat.addInputPath(job,input);
-		FileOutputFormat.setOutputPath(job, output);
+		job.setOutputKeyComparatorClass(DescendingKeyComparator.class);
+		TextInputFormat.addInputPath(job,input);
+		TextOutputFormat.setOutputPath(job, output);
 		job.setInt("mapreduce.reduce.input.limit", -1);
 		fs = FileSystem.get(job);
 		fs.delete(output, true);

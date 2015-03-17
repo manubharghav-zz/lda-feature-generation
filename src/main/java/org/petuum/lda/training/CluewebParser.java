@@ -16,6 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.log4j.Logger;
 
 
@@ -47,48 +49,18 @@ public class CluewebParser extends Configured {
 		fs = FileSystem.get(job);
 		fs.delete(outputPath, true);
 		job.setJarByClass(CluewebParser.class);
-//		String classpath = System.getProperty("java.class.path");
-//		String[] classpathEntries = classpath.split(File.pathSeparator);
-//		for(String s: classpathEntries){
-//			System.out.println(s);
-//		}
 		
-		job.setInputFormat(WarcFileInputFormat.class);
-//		WarcFileInputFormat.addInputPath(job, input);
-		
+		job.setInputFormat(TextInputFormat.class);		
 		job.setMapperClass(ClueWebMapper.class);
 		job.setReducerClass(CluewebReducer.class);
 		job.setCombinerClass(CluewebCombiner.class);
 
 	    job.setMapOutputKeyClass(Text.class);
 	    job.setMapOutputValueClass(IntWritable.class);
-	    
-	    // adding inputs.
-      Path actual_inputs = new Path(input, "/*.warc.gz");
-      System.out.println(actual_inputs.toString());
-      System.out.println(input.toString());
-	    List<Path> inputhPaths = new ArrayList<Path>();
-        FileSystem fs = FileSystem.get(job);
-        FileStatus[] listStatus = fs.globStatus(input);
-		for (FileStatus fstat : listStatus) {
-			System.out.println(fstat.getPath());
-			if (fstat.getPath().getName().endsWith(".warc.gz")) {
-				logger.info("Accepting Path: " + fstat.getPath().toString());
-				inputhPaths.add(fstat.getPath());
-			} else {
-				logger.info("rejecting path: " + fstat.getPath().getName());
-			}
-		}
-
-        WarcFileInputFormat.setInputPaths(job,
-                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
-	    
-		FileOutputFormat.setOutputPath(job, outputPath);
-//		job.setOutputFormat(TextOutputFormat.class);
+	    TextInputFormat.addInputPath(job, input);
+		TextOutputFormat.setOutputPath(job, outputPath);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
-		job.set("stopWordsListLocation", "/home/manu/data/stop-words/stop-words_english_1_en.txt");
-		
 		job.set("mapred.map.child.java.opts","-Xmx512m -XX:MaxPermSize=256m");
 		job.set("mapred.reduce.child.java.opts","-Xmx512m -XX:MaxPermSize=256m");
 		job.setBoolean("mapred.map.tasks.speculative.execution",false);
@@ -98,7 +70,7 @@ public class CluewebParser extends Configured {
 		job.setInt("mapred.skip.reduce.max.skip.records", 1);
 		job.setInt("mapred.skip.attempts.to.start.skipping",1);	
 		job.setInt("mapreduce.reduce.input.limit", -1);
-		
+		job.setNumReduceTasks(44);
 		JobClient.runJob(job);
 		
 	}

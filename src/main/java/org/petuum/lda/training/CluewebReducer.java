@@ -17,35 +17,31 @@ public class CluewebReducer implements Reducer<Text, IntWritable, Text, Text> {
 	
 	private static Logger logger = Logger.getLogger(CluewebReducer.class);
 	private static Text value = new Text();
-	private MultipleOutputs mos;
 	public void configure(JobConf conf) {
-		System.out.println("Started Reduce");
-//		 mos = new MultipleOutputs(conf);		
+		System.out.println("Started Reduce");		
 	}
 
 	public void close() throws IOException {
-//		mos.close();
 	}
 
 	public void reduce(Text key, Iterator<IntWritable> arg1,
 			OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
-//		StringBuffer buffer = new StringBuffer();
-		int frequency=0;
-		
+		int TFfrequency=0;
+		int DFFrequency=0;
+		int termFrequency=0;
+		int DocFrequency=0;
 		while(arg1.hasNext()){
 			IntWritable w = arg1.next();
-			frequency=frequency+w.get();
-//			buffer.append(arg1.next().toString());
-//			buffer.append(" ");
+			if(w.get()>0){
+				termFrequency+=w.get();
+			}
+			else{
+				DocFrequency+=w.get();
+			}
 		}
-		String newKey = frequency + " " + key.toString();
-//		System.out.println(frequency);
-		output.collect(key, new Text(String.valueOf(frequency)));
-		key.set(newKey);
-//		value.set(buffer.toString());
-//		mos.getCollector("index", reporter).collect(key, value);
-		
-		
+		DocFrequency = DocFrequency*-1;
+		double score = (float)termFrequency* (Math.log((float) 733018418 / DocFrequency));
+		output.collect(key, new Text(String.valueOf(score)));		
 	}
 	
 }
