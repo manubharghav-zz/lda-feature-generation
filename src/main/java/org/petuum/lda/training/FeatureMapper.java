@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
@@ -28,44 +29,34 @@ import edu.stanford.nlp.process.Morphology;
 
 
 public class FeatureMapper extends Configured implements
-Mapper<Writable, WritableWarcRecord, Text, Text> {
-	private static StopWordFilter filter;
+Mapper<Writable, Text, Text, Text> {
 	public static final Log logger = LogFactory.getLog(FeatureMapper.class);
 	private Map<String, Integer> featureIdMap = new HashMap<String, Integer>();
-	
-	private Morphology morphAnalyzer;
-	public void map(Writable key, WritableWarcRecord value, OutputCollector<Text, Text> output,
+	private Text TrecID = new Text();
+
+	public void map(Writable key, Text value, OutputCollector<Text, Text> output,
 			Reporter arg3) throws IOException {
-		WarcHTMLResponseRecord htmlRecord=new WarcHTMLResponseRecord(value.getRecord());
-		String stemmedWord;
-		HashMap<String, Integer> map  = new HashMap<String, Integer>();
-		try {
-			String trecId = htmlRecord.getTargetTrecID();
-			logger.info("Map: Processing trecID: "+trecId + "  url:" +htmlRecord.getTargetURI());
-			String parseContent = Jsoup.parse(htmlRecord.getRawRecord().getContentUTF8()).text().toLowerCase();
-			String[] splits = parseContent.split(" ");
-			splits = StringUtils.stripAll(splits, "&-:\\?><\\\" '#@*(),%. \\/");
-			for(int i=0;i<splits.length;i++){
-				if(!filter.isStopWord(splits[i].toLowerCase())){
-					if(splits[i].length()<2 || !StringUtils.isAlpha(splits[i]) ){
-						continue;
-					}
-					stemmedWord = morphAnalyzer.stem(splits[i]);										
-					Integer count = map.get(stemmedWord);
-					if(count==null){
-						map.put(stemmedWord, 1);
-					}
-					else{
-						map.put(stemmedWord,count+1);
-					}
-				}
+		StringTokenizer tokenizer = new StringTokenizer(value.toString());
+		String trecId = tokenizer.nextToken();
+		StringBuffer buffer = new StringBuffer();
+//		logger.info("Processing document : "+trecId);
+//		HashMap<Integer, Integer> map  = new HashMap<Integer, Integer>();
+		while(tokenizer.hasMoreTokens()){
+			String token = tokenizer.nextToken();
+			String count = tokenizer.nextToken();
+			if(featureIdMap.containsKey(token)){
+				int featureId = featureIdMap.get(token);
+				buffer.append(featureId).append(":").append(count).append("\t");
 			}
-			publishMap(map, output,trecId);
-			map.clear();
 		}
-		catch(Exception e){
-			System.out.println("exception occured while processing key:" + key.toString());
-		}
+		
+//		
+//		for(Map.Entry<Integer, Integer> entry: map.entrySet()){
+//			buffer.append(entry.getKey()).append(":").append(entry.getValue()).append("\t");
+//		}
+		TrecID.set(trecId);
+		output.collect(TrecID, new Text(buffer.toString()));
+		
 		
 	}
 	
@@ -119,12 +110,9 @@ Mapper<Writable, WritableWarcRecord, Text, Text> {
 			}
 		}
 		
-		filter= new StopWordFilter();
-		morphAnalyzer = new Morphology();
-		
 	}
 	public void close() throws IOException {
-		
+		featureIdMap.clear();
 		
 	}
 

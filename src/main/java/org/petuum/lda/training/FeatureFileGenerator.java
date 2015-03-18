@@ -59,42 +59,44 @@ public class FeatureFileGenerator extends Configured {
 		fs.delete(FeatureFilesLocation, true);
 		
 		Path MergedFeatureFilesLocation = new Path(output, "mergedFeatureFiles");
-		
+		fs.delete(MergedFeatureFilesLocation, true);
 		job.setJarByClass(FeatureFileGenerator.class);
-
+//
 		job.set("VocabFile", vocabFile);
 		job.setInt("VocabSize", vocabSize);
-		
-		job.setInputFormat(WarcFileInputFormat.class);
-		// adding inputs.
-	    List<Path> inputhPaths = new ArrayList<Path>();
-        FileSystem fs = FileSystem.get(job);
-        FileStatus[] listStatus = fs.globStatus(input);
-        for (FileStatus fstat : listStatus) {
-        	if(fstat.getPath().getName().endsWith(".warc.gz")){
-        		logger.info("Accepting Path: " + fstat.getPath().toString());
-            	inputhPaths.add(fstat.getPath());
-        	}
-        	else{
-        		logger.info("rejecting path: " + fstat.getPath().getName());
-        	}
-        }
-
-        WarcFileInputFormat.setInputPaths(job,
-                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
+//		
+//		job.setInputFormat(WarcFileInputFormat.class);
+//		// adding inputs.
+//	    List<Path> inputhPaths = new ArrayList<Path>();
+//        FileSystem fs = FileSystem.get(job);
+//        FileStatus[] listStatus = fs.globStatus(input);
+//        for (FileStatus fstat : listStatus) {
+//        	if(fstat.getPath().getName().endsWith(".warc.gz")){
+//        		logger.info("Accepting Path: " + fstat.getPath().toString());
+//            	inputhPaths.add(fstat.getPath());
+//        	}
+//        	else{
+//        		logger.info("rejecting path: " + fstat.getPath().getName());
+//        	}
+//        }
+//
+//        WarcFileInputFormat.setInputPaths(job,
+//                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
 		
 		job.setMapperClass(FeatureMapper.class);
 		job.setReducerClass(FeatureReducer.class);
 
 	    job.setMapOutputKeyClass(Text.class);
 	    job.setMapOutputValueClass(Text.class);
-	   	    
-		FileOutputFormat.setOutputPath(job, FeatureFilesLocation);
+	   	   
+	    TextInputFormat.addInputPath(job, input);
+		TextOutputFormat.setOutputPath(job, FeatureFilesLocation);
 //		job.setOutputFormat(TextOutputFormat.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		job.set("stopWordsListLocation", "/home/manu/data/stop-words/stop-words_english_1_en.txt");
-		
+		job.setNumReduceTasks(0);
+		job.setInt("mapreduce.task.timeout", 1200000);
 		job.set("mapred.map.child.java.opts","-Xmx512m -XX:MaxPermSize=256m");
 		job.set("mapred.reduce.child.java.opts","-Xmx512m -XX:MaxPermSize=256m");
 		job.setBoolean("mapred.map.tasks.speculative.execution",false);
