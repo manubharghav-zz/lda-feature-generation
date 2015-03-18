@@ -108,6 +108,6 @@ public class FeatureFileGenerator extends Configured {
 		job.setNumReduceTasks(0);
 		job.setInt("mapreduce.task.timeout", 1200000);
 		JobClient.runJob(job);
-		FileUtil.copyMerge(fs, FeatureFilesLocation, fs, MergedFeatureFilesLocation, true, job, null);
+//		FileUtil.copyMerge(fs, FeatureFilesLocation, fs, MergedFeatureFilesLocation, true, job, null);
 	}
 }
